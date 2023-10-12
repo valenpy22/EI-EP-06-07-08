@@ -30,6 +30,7 @@ medium <- filtered_by_psychology[filtered_by_psychology$dificultad == "Media", ]
 high <- filtered_by_psychology[filtered_by_psychology$dificultad == "Alta", ]$tiempo
 
 usuario <- factor(1:600)
+
 # Se hace el dataframe donde se colocan los tiempos ya extraídos de cada dificultad
 datos <- data.frame(usuario, low, medium, high)
 
@@ -74,7 +75,7 @@ cat("\nFor more information:\n")
 cat("Result of Mauchly's test of sphericity:\n")
 print(prueba2$`Mauchly's Test for Sphericity`)
 
-# Se tiene que p vale 0.4153, por lo que se cumple la condición de esfericidad.
+# Se tiene que p vale 0.4153, y al ser un valor alto se cumple la condición de esfericidad.
 
 alfa <- 0.05
 
