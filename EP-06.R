@@ -94,7 +94,8 @@ print(bonferroni)
 # Finalmente, se tiene que las pruebas de dificultad alta y media tienen
 # también una diferencia significativa.
 
+# Se rechaza la hipótesis nula en favor de la hipótesis alternativa.
 # Por lo tanto, se puede concluir con un 95% de confianza (debido a que p < alfa) 
-# que sí existen diferencias significativas entre las pruebas de psicología entre 
-# las pruebas de dificultad baja y alta, y entre las de dificultad
-# media y baja.
+# que sí existen diferencias significativas entre los tiempos en que los usuarios 
+# formulan problemas en pruebas de psicología entre 
+# las pruebas de dificultad baja y alta, y entre las de dificultad media y baja.
