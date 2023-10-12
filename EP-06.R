@@ -7,9 +7,11 @@ library("ggpubr")
 library("ez")
 library("nlme")
 library("emmeans")
+library("PASWR2")
+library("dplyr")
 
 # Se importan los datos
-data <- read.csv("Desktop/EP-Grupo-8/EP05 Datos.csv")
+data <- read.csv("EP05 Datos.csv")
 
 # Formulación de hipótesis
 # Ho: No existen diferencias en el tiempo que tardan los usuarios en formular
@@ -53,6 +55,7 @@ eda(low)
 eda(medium)
 eda(high)
 
+# Prueba omnibus
 # ANOVA using aov procedure.
 cat("Using ANOVA with aov\n\n")
 prueba <- aov(tiempo ~ dificultad + Error(usuario/dificultad), data = datos)
@@ -75,31 +78,22 @@ print(prueba2$`Mauchly's Test for Sphericity`)
 
 alfa <- 0.05
 
-# Post-hoc analysis using Bonferroni correction
-bonferroni <- pairwise.t.test(datos[["tiempo"]], datos[["algoritmo"]],
+# Prueba post hoc
+# Post-hoc análisis usando la corrección Bonferroni
+bonferroni <- pairwise.t.test(datos[["tiempo"]], datos[["dificultad"]],
                               p.adj = "bonferroni", paired = TRUE)
 
 cat("Bonferroni Correction\n")
 print(bonferroni)
 
-# Post-hoc analysis using Holm correction
-holm <- pairwise.t.test(datos[["tiempo"]], datos[["dificultad"]],
-                        p.adj = "holm", paired = TRUE)
+# Se tiene que "high vs low" es menor a 2e-16, lo que significa que
+# hay una diferencia significativa entre estos dos grupos.
+# Además, entre "medium" y "low" se sugiere que hay una diferencia significativa
+# pero menos fuerte que la anterior.
+# Finalmente, se tiene que las pruebas de dificultad alta y media tienen
+# también una diferencia significativa.
 
-# Print Holm results
-cat("\nHolm Correction\n")
-print(holm)
-
-# Post-hoc analysis using Tukey's HSD
-mixto <- lme(tiempo ~ dificultad, data = datos, random = ~1|usuario)
-medias <- emmeans(mixto, "dificultad")
-tukey <- pairs(medias, adjust = "tukey")
-
-cat("\nTukey's HSD Test\n")
-print(tukey)
-
-# Post-hoc analysis using Scheffé's method
-scheffe <- pairs(medias, adjust = "scheffe")
-
-cat("\nScheffé Comparison\n")
-print(scheffe)
+# Por lo tanto, se puede concluir con un 95% de confianza (debido a que p < alfa) 
+# que sí existen diferencias significativas entre las pruebas de psicología entre 
+# las pruebas de dificultad baja y alta, y entre las de dificultad
+# media y baja.
