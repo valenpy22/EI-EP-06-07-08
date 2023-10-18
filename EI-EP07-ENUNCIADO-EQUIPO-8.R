@@ -7,6 +7,66 @@ library("emmeans")
 library("PASWR2")
 library("dplyr")
 
+# II. #La memorista también sospecha que, al comparar las mismas instancias 
+# de iguales características, las mejores soluciones encontradas por las versiones 
+# B y C tienen rendimientos distintos. ¿Estará en lo cierto?
+###################################################################################
+
+# Se importan los datos
+data <- read.csv("EP07 Datos.csv")
+
+# Se filtran los datos
+data_filtered <- data[data$n.nodos >= 75, ]
+
+data_filtered <- data_filtered[, c("mejor.B", "mejor.C")]
+
+# Se setea la semilla para sacar la muestra
+set.seed(73)
+
+sample <- data_filtered[sample(nrow(data_filtered), 19), ]
+
+sample
+
+# Se plantea la hipotesis:
+
+# H0: Las medianas de los mejores rendimientos de las versiones B y C son iguales.
+# Ha: Las medianas de los mejores rendimientos de las versiones B y C son diferentes.
+
+# Se analizan las condiciones para utilizar ANOVA:
+
+# Los datos son independientes entre sí.
+
+# Usamos el test de Shapiro-Wilk para verificar la normalidad de los datos
+shapiro_test_B <- shapiro.test(sample$mejor.B)
+shapiro_test_C <- shapiro.test(sample$mejor.C)
+
+shapiro_test_B$p.value
+shapiro_test_C$p.value
+
+# Dado que los valores p de ambas muestras son menor a una nivel de significancía del 0.05 
+# se puede rechazar la hipotesis nula en favor de la alternativa, es decir, no presentan 
+# una distribución normal por lo que se debe usar una prueba no paramétrica.
+
+# Se analizan las condiciones para utilzar la prueba de Wilcoxon Mann Whitney
+
+# Las observaciones de ambas muestras son independientes, puesto que son algoritmos 
+# diferentes y el tiempo que demora cada uno solo depende de su implementación.
+
+# La escala de medición es a lo menos ordinal, se cumple pues existe la posibilidad de 
+# comparar los tiempos y discriminar la relación que poseen, por ejemplo, si uno es menor que otro. 
+
+# Se realiza la prueba de Wilcoxon
+result <- wilcox.test(sample$mejor.B, sample$mejor.C, paired = TRUE, conf.level = 0.05)
+
+print(result)
+
+# Al resultar un valor p de 0.2413, es decir, mayor que nuestro alfa = 0.05, se concluye 
+# que no se tiene información suficiente para rechazar la hipotesis nula en favor de la 
+# alternativa, en simples palabras no se puede concluir que haya una diferencia significativa 
+# entre los rendimientos de las mejores soluciones de la version B y C.
+
+# Como se realiza una comparación entre dos muestras conocidas no se hace necesaria una prueba post-hoc.
+
 # III. La memorista sospecha que hay diferencias significativas 
 # en el tiempo de ejecución entre las versiones del algoritmo
 # cuando las instancias de prueba tienen 50 o más nodos. 
