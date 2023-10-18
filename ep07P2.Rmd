@@ -1,0 +1,39 @@
+---
+title: "EP07"
+author: "Benjamin Canales"
+date: "2023-10-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+La memorista también sospecha que, al comparar las mismas instancias de iguales características, las mejores soluciones encontradas por las versiones B y C tienen rendimientos distintos. ¿Estará en lo cierto?
+
+```{r}
+# Se importan los datos
+data <- read.csv("EP07 Datos.csv")
+
+data_filtered <- data[data$n.nodos >= 75, ]
+
+data_filtered <- data_filtered[, c("mejor.B", "mejor.C")]
+
+bestB <- data_filtered$mejor.B
+bestC <- data_filtered$mejor.C
+
+bestB
+bestC
+
+set.seed(73)
+
+sample <- data_filtered[sample(nrow(data_filtered), 19), ]
+
+sample
+```
+Se analizan las condiciones
+1. Las observaciones de ambas muestras son independientes, puesto que son algoritmos diferentes y el tiempo que demora cada uno solo depende de su implementación
+2. La escala de medición es a lo menos ordinal, se cumple pues 
+
+
+
