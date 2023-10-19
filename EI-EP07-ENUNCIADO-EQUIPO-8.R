@@ -42,7 +42,6 @@ datos <- read.csv("EP07 Datos.csv", stringsAsFactors = TRUE)
 # Filtrar las instancias con 75 o más nodos y seleccionar tiempos de ejecución de B y C
 filtered_data <- datos %>% dplyr::filter(n.nodos >= 75) %>% dplyr::select(tiempo.B, tiempo.C)
 
-
 # Dado que no sabemos si los datos siguen una distribución normal, utilizaremos pruebas no paramétricas. 
 # Pero antes de seleccionar una prueba específica, vamos a evaluar la normalidad de las muestras usando 
 # la prueba de Shapiro-Wilk. Si las muestras no son normales, recurriremos a pruebas no paramétricas.
@@ -153,7 +152,7 @@ shapiro_test_C$p.value
 # La escala de medición es a lo menos ordinal, se cumple pues existe la posibilidad 
 # de comparar los tiempos y discriminar la relación que poseen, por ejemplo, si uno es menor que otro. 
 # Se realiza la prueba de Wilcoxon
-result <- wilcox.test(sample$mejor.B, sample$mejor.C, paired = TRUE, conf.level = 0.05)
+result <- wilcox.test(sample$mejor.B, sample$mejor.C, paired = TRUE, conf.level = 1 - 0.05)
 
 print(result)
 
@@ -265,17 +264,8 @@ prueba <- kruskal.test(Tiempo ~ Algoritmo, data = datas)
 print(prueba)
 
 # 10. Realizar la conclusión en base al valor de p
-if(prueba$p.value < alfa){
-  post_hoc <- pairwise.wilcox.test(datas$Tiempo,
-                                   datas$Algoritmo,
-                                   p.adjust.method = "holm",
-                                   paired = FALSE)
-  print("Se encontraron diferencias significativas, y estos son los resultados: ")
-  print(post_hoc)
-  
-}
 
-# Por lo tanto, si p es menor que alfa se tienen diferencias significativas.
+
 
 # IV. La memorista también sospecha que, al comparar las mismas instancias 
 # con iguales características, las mejores soluciones encontradas por las 
