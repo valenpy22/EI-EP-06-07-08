@@ -316,7 +316,6 @@ muestra_mejor_C <- sample(tiempos_mejor_C, 6)
 #     mu_A = mu_B = mu_C
 # Ha: Hay al menos una media de tiempo de ejecución que es distinta entre
 #     los tiempos A, B y C.
-#     
 
 # 6. Revisar condiciones para emplear ANOVA
 # - Las poblaciones son independientes.
@@ -362,17 +361,10 @@ datas2 <- data.frame(Tiempo2, Algoritmo2)
 alfa <- 0.01
 
 # 9. Se hace la prueba de Kruskal-Wallis.
-prueba2 <- kruskal.test(Tiempo2 ~ Algoritmo2, data = datas2)
+prueba2 <- friedman.test(Tiempo2 ~ Algoritmo2 | , data = datas2)
 print(prueba2)
 
 # 10. Realizar la conclusión en base al valor de p
-if(prueba2$p.value < alfa){
-  post_hoc <- pairwise.wilcox.test(datas2$Tiempo2,
-                                   datas2$Algoritmo2,
-                                   p.adjust.method = "holm",
-                                   paired = TRUE)
-  print("Se encontraron diferencias significativas, y estos son los resultados: ")
-  print(post_hoc)
-}
-
 # Por lo tanto, si p es menor que alfa se tienen diferencias significativas.
+# En este caso, debido a que p > nivel de significancia, se falla en rechazar la hipótesis 
+# nula en favor de la hipótesis alternativa, por lo que
