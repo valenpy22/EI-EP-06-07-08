@@ -6,28 +6,129 @@ library("nlme")
 library("emmeans")
 library("PASWR2")
 library("dplyr")
+library("car")
 
-# II. #La memorista también sospecha que, al comparar las mismas instancias 
-# de iguales características, las mejores soluciones encontradas por las versiones 
-# B y C tienen rendimientos distintos. ¿Estará en lo cierto?
-###################################################################################
+# Pregunta N°1
+# Observando los datos, la memorista sospecha que hay diferencias significativas 
+# en el tiempo de ejecución entre las versiones B y C del
+# algoritmo cuando las instancias tienen 75 o más nodos. ¿Los datos respaldan 
+# la intuición de la memorista?
+
+# Para responder, filtren los datos para tener las instancias con 75 o más 
+# nodos y seleccionen las columnas de los tiempos de ejecución de 
+# las versiones B y C en formato ancho. Usando como semilla el valor 23, 
+# obtenga muestras aleatorias independientes de 23 tiempos registrados por 
+# la versión B y 20 tiempos registrados por la versión C del algoritmo. 
+# Realicen un análisis estadístico pertinente (enunciar hipótesis, revisar 
+# condiciones, seleccionar prueba) para responder la pregunta planteada, 
+# utilizando pruebas no paramétricas de ser necesario.
+
+# 1-Filtrar el conjunto de datos para seleccionar solo las instancias con 75 o más nodos.
+# 2-Seleccionar las columnas de los tiempos de ejecución de las versiones B y C.
+# 3-Obtener muestras aleatorias independientes con los tamaños indicados.
+# 4-Realizar un análisis estadístico para determinar si hay diferencias 
+#   significativas entre los tiempos de ejecución de las versiones B y C.
+
+# Formulación de la Hipótesis 
+# H0: No hay diferencias significativas entre los tiempos de ejecución de 
+#     las versiones B y C del algoritmo.
+# Ha: Hay diferencias significativas entre los tiempos de ejecución de las versiones B y C del algoritmo.
+
+# Cargar los datos
+datos <- read.csv("EP07 Datos.csv", stringsAsFactors = TRUE)
+
+# 1.Se filtran los datos para incluir solo las instancias con 75 o más nodos
+
+# Filtrar las instancias con 75 o más nodos y seleccionar tiempos de ejecución de B y C
+filtered_data <- datos %>% dplyr::filter(n.nodos >= 75) %>% dplyr::select(tiempo.B, tiempo.C)
+
+
+# Dado que no sabemos si los datos siguen una distribución normal, utilizaremos pruebas no paramétricas. 
+# Pero antes de seleccionar una prueba específica, vamos a evaluar la normalidad de las muestras usando 
+# la prueba de Shapiro-Wilk. Si las muestras no son normales, recurriremos a pruebas no paramétricas.
+
+# Obtener las muestras aleatorias
+
+set.seed(23)
+sample_B <- sample_n(filtered_data, 23)$tiempo.B
+sample_C <- sample_n(filtered_data, 20)$tiempo.C
+
+# Prueba de Shapiro-Wilk para normalidad
+shapiro_test_B <- shapiro.test(sample_B)
+shapiro_test_B
+shapiro_test_C <- shapiro.test(sample_C)
+shapiro_test_C
+
+# Los resultados de la prueba de Shapiro-Wilk son los siguientes:
+# Para la muestra B: p-valor = 0.02942
+# Para la muestra C: p-valor = 0.0483
+
+# Dado que ambos p-valores son menores que 0.05, rechazamos la hipótesis nula de la prueba de Shapiro-Wilk.
+# Esto indica que si hay evidencia suficiente para afirmar que las muestras no siguen una distribución normal.
+
+# Dado que ambas muestras no parecen ser normales y provienen de poblaciones independientes, no podemos considerar
+# la prueba t de Student para muestras independientes. Sin embargo, para asegurarnos de que es la prueba 
+# adecuada, debemos verificar la homogeneidad de varianzas utilizando la prueba de Levene.
+
+# Realizar la prueba de Levene
+grouping_vector <- factor(c(rep(1, length(sample_B)), rep(2, length(sample_C))))
+levene_test <- leveneTest(y = c(sample_B, sample_C), group = grouping_vector)
+
+# Mostrar los resultados
+print(levene_test)
+# Si las varianzas no son homogéneas, podemos considerar pruebas no paramétricas como la prueba de suma 
+# de rangos de Wilcoxon. Veamos si las varianzas son homogéneas usando la prueba de Levene.
+
+# El resultado de la prueba de Levene es: p-valor = 0.0175
+# Dado que el p-valor es menor que 0.05, rechazamos la hipótesis nula de la prueba 
+# de Levene, lo que indica que las varianzas no son homogéneas.
+
+# Dado que las varianzas no son homogéneas y  las muestras no parecen normales, 
+# para ser conservadores y teniendo en cuenta las recomendaciones de las pruebas 
+# no paramétricas,
+# utilizaremos la prueba de suma de rangos de Wilcoxon para muestras independientes 
+# (también conocida como prueba de Mann-Whitney U) 
+# para comparar las dos muestras.
+
+# Realizaremos la prueba de Mann-Whitney U entre las muestras B y C.
+mannwhitney_test <- wilcox.test(sample_B, sample_C, paired = FALSE, exact = FALSE, correct = FALSE, alternative = "two.sided")
+
+# Mostrar los resultados
+print(mannwhitney_test)
+
+# Los resultados de la prueba de Mann-Whitney U son los siguientes:
+
+# Valor de p: 0.0004146
+
+# Dado que el p-valor es significativamente menor que 0.05, rechazamos la hipótesis nula. 
+# Esto significa que hay evidencia suficiente para afirmar que hay diferencias significativas entre los tiempos
+# de ejecución de las versiones B y C del algoritmo para instancias con 75 o más nodos.
+# Por lo tanto, los datos respaldan la intuición de la memorista.
+
+#2. La memorista también sospecha que, al comparar las mismas instancias de iguales 
+# características, las mejores soluciones encontradas por las versiones B y C 
+# tienen rendimientos distintos. ¿Estará en lo cierto?
+# Para responder, filtren los datos para tener las instancias con 75 o más nodos 
+# y seleccionen las columnas con el mejor rendimiento de las versiones B y C en 
+# formato ancho. Usando como semilla el valor 73, obtengan una muestra aleatoria de 
+# 19 instancias. Realicen un análisis estadístico pertinente (enunciar hipótesis, 
+# revisar condiciones, seleccionar prueba) para responder la pregunta planteada, 
+# utilizando pruebas no paramétricas de ser necesario.
 
 # Se importan los datos
 data <- read.csv("EP07 Datos.csv")
 
 # Se filtran los datos
 data_filtered <- data[data$n.nodos >= 75, ]
-
 data_filtered <- data_filtered[, c("mejor.B", "mejor.C")]
+print(data_filtered)
 
 # Se setea la semilla para sacar la muestra
 set.seed(73)
-
 sample <- data_filtered[sample(nrow(data_filtered), 19), ]
+print(sample)
 
-sample
-
-# Se plantea la hipotesis:
+# Se plantea la hipótesis:
 
 # H0: Las medianas de los mejores rendimientos de las versiones B y C son iguales.
 # Ha: Las medianas de los mejores rendimientos de las versiones B y C son diferentes.
@@ -43,28 +144,24 @@ shapiro_test_C <- shapiro.test(sample$mejor.C)
 shapiro_test_B$p.value
 shapiro_test_C$p.value
 
-# Dado que los valores p de ambas muestras son menor a una nivel de significancía del 0.05 
-# se puede rechazar la hipotesis nula en favor de la alternativa, es decir, no presentan 
-# una distribución normal por lo que se debe usar una prueba no paramétrica.
-
+# Dado que los valores p de ambas muestras son menor a una nivel de significancía del 0.05, 
+# se puede rechazar la hipótesis nula en favor de la alternativa, es decir, no 
+# presentan una distribución normal por lo que se debe usar una prueba no paramétrica.
 # Se analizan las condiciones para utilzar la prueba de Wilcoxon Mann Whitney
-
 # Las observaciones de ambas muestras son independientes, puesto que son algoritmos 
 # diferentes y el tiempo que demora cada uno solo depende de su implementación.
-
-# La escala de medición es a lo menos ordinal, se cumple pues existe la posibilidad de 
-# comparar los tiempos y discriminar la relación que poseen, por ejemplo, si uno es menor que otro. 
-
+# La escala de medición es a lo menos ordinal, se cumple pues existe la posibilidad 
+# de comparar los tiempos y discriminar la relación que poseen, por ejemplo, si uno es menor que otro. 
 # Se realiza la prueba de Wilcoxon
 result <- wilcox.test(sample$mejor.B, sample$mejor.C, paired = TRUE, conf.level = 0.05)
 
 print(result)
 
-# Al resultar un valor p de 0.2413, es decir, mayor que nuestro alfa = 0.05, se concluye 
-# que no se tiene información suficiente para rechazar la hipotesis nula en favor de la 
-# alternativa, en simples palabras no se puede concluir que haya una diferencia significativa 
-# entre los rendimientos de las mejores soluciones de la version B y C.
-
+# Al resultar un valor p de 0.2413, es decir, mayor que nuestro alfa = 0.05, se 
+# concluye que no se tiene información suficiente para rechazar la hipótesis nula 
+# en favor de la alternativa, en simples palabras no se puede concluir que haya 
+# una diferencia significativa entre los rendimientos de las mejores soluciones 
+# de la version B y C.
 # Como se realiza una comparación entre dos muestras conocidas no se hace necesaria una prueba post-hoc.
 
 # III. La memorista sospecha que hay diferencias significativas 
@@ -76,8 +173,6 @@ print(result)
 # Seleccionen las columnas con los tiempos de 
 # ejecución registrados (en formato ancho). Usando como semilla 
 # el valor 43, obtengan muestras aleatorias independientes de 13, 
-
-##################################################################
 # 14 y 13 tiempos registrados por las versiones A, B y C, 
 # respectivamente. Realicen un análisis estadístico pertinente 
 # (enunciar hipótesis, revisar condiciones, seleccionar prueba) 
@@ -85,7 +180,7 @@ print(result)
 # paramétricas de ser necesario. 
 
 # 1. Recoger los datos
-datos <- read.csv("Desktop/EP-Grupo-8/EP07 Datos.csv")
+datos <- read.csv("EP07 Datos.csv")
 head(datos)
 
 # 2. Se filtran los datos que tengan 50 o más nodos
@@ -100,9 +195,19 @@ tiempos_B <- datos_filtrados$tiempo.B
 tiempos_C <- datos_filtrados$tiempo.C
 
 # 4. Usar semilla 43
-muestra_A <- sample(tiempos_A, 13)
-muestra_B <- sample(tiempos_B, 14)
-muestra_C <- sample(tiempos_C, 13)
+set.seed(43)
+
+indices_A <- sample(seq_len(length(tiempos_A)), 13)
+muestra_A <- tiempos_A[indices_A]
+tiempos_A <- tiempos_A[-indices_A]
+
+indices_B <- sample(seq_len(length(tiempos_B)), 14)
+muestra_B <- tiempos_B[indices_B]
+tiempos_B <- tiempos_B[-indices_B]
+
+indices_C <- sample(seq_len(length(tiempos_C)), 13)
+muestra_C <- tiempos_C[indices_C]
+tiempos_C <- tiempos_C[-indices_C]
 
 # 5. Plantear las hipótesis
 # Ho: No hay diferencia en la media de los tiempos de ejecución entre
@@ -179,19 +284,21 @@ if(prueba$p.value < alfa){
 # Para responder, filtren los datos para tener las instancias con 50 o más 
 # nodos y seleccionen las columnas con los mejores rendimientos registrados. 
 # Usando como semilla el valor 16, obtengan una muestra aleatoria de 21 instancias. 
-###################################################################################
 
 # Realicen un análisis estadístico pertinente 
 # (enunciar hipótesis, revisar condiciones, seleccionar prueba) para responder la 
 # pregunta planteada, utilizando pruebas no paramétricas de ser necesario.
 
 # 1. Recoger los datos
-datos2 <- read.csv("Desktop/EP-Grupo-8/EP07 Datos.csv")
+datos2 <- read.csv("EP07 Datos.csv")
 head(datos2)
 
 # 2. Se filtran los datos que tengan 50 o más nodos
 datos_filtrados2 <- datos2[datos2$n.nodos >= 50, ]
 head(datos_filtrados2)
+
+set.seed(16)
+muestra_2 <- datos_filtrados2[sample(nrow(datos_filtrados), 21), ]
 
 # 3. Seleccionar los tiempos de ejecución registrados
 tiempos_mejor_A <- datos_filtrados2$mejor.A
@@ -263,7 +370,7 @@ if(prueba2$p.value < alfa){
   post_hoc <- pairwise.wilcox.test(datas2$Tiempo2,
                                    datas2$Algoritmo2,
                                    p.adjust.method = "holm",
-                                   paired = FALSE)
+                                   paired = TRUE)
   print("Se encontraron diferencias significativas, y estos son los resultados: ")
   print(post_hoc)
 }
