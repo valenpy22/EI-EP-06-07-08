@@ -5,8 +5,12 @@
 
 library(ggpubr)
 
+dir <- getwd()
+
+setwd(dir)
+
 # Se leen los datos
-datos <- read.csv2("Desktop/EP-Grupo-8/EP08 Datos CASEN 2017.csv")
+datos <- read.csv2("C:/WorkSpace/EP-Grupo-8/EP08 Datos CASEN 2017.csv", fileEncoding = "Latin1")
 
 head(datos)
 # Se hace la selección de una muestra aleatoria
@@ -20,15 +24,15 @@ diferencias <- numeric(num_simulaciones)
 
 for(i in 1:num_simulaciones){
   muestra_simulada <- muestra[sample(nrow(muestra), n, replace = TRUE), ]
-  frecuencia_originarios <- mean((muestra_simulada$r3 == "No pertenece a ningún pueblo indígena" || muestra_simulada$r.3 == "No sabe/no responde") & ((muestra_simulada$s28 != "No ha estado en tratamiento por ninguna condicion de salud a") || (muestra_simulada != "No sabe/No recuerda")))
-  frecuencia_no_originarios <- mean((muestra_simulada$r3 != "No pertenece a ningún pueblo indígena" || muestra_simulada$r.3 == "No sabe/no responde") & ((muestra_simulada$s28 != "No ha estado en tratamiento por ninguna condicion de salud a") || (muestra_simulada != "No sabe/No recuerda")))
+  frecuencia_originarios <- mean((muestra_simulada$r3 == "No pertenece a ningún pueblo indígena" | muestra_simulada$r3 == "No sabe/no responde") & ((muestra_simulada$s28 != "No ha estado en tratamiento por ninguna condicion de salud a") | (muestra_simulada$s28 == "No sabe/No recuerda")), na.rm = TRUE)
+  frecuencia_no_originarios <- mean((muestra_simulada$r3 != "No pertenece a ningún pueblo indígena" | muestra_simulada$r3 == "No sabe/no responde") & ((muestra_simulada$s28 != "No ha estado en tratamiento por ninguna condicion de salud a") | (muestra_simulada$s28 == "No sabe/No recuerda")), na.rm = TRUE)
   diferencias[i] <- frecuencia_originarios - frecuencia_no_originarios
 }
 
 # Análisis de los resultados
 media_diferencias <- mean(diferencias)
-ic_inf <- quantile(diferencias, 0.025)
-ic_sup <- quantile(diferencias, 0.975)
+ic_inf <- quantile(diferencias, 0.025, na.rm = TRUE)
+ic_sup <- quantile(diferencias, 0.975, na.rm = TRUE)
 
 cat("La diferencia media estimada es:", media_diferencias, "\n")
 cat("El intervalo de confianza al 95% para la diferencia es: [", ic_inf, ",", ic_sup, "]\n")
