@@ -1,52 +1,83 @@
-# ¿Existe una diferencia significativa en la frecuencia 
-# de enfermedades crónicas entre los individuos que 
-# pertenecen a un pueblo originario y aquellos que no, 
-# en la población de Chile?
+# Se fija la carpeta de trabajo
+dir <- getwd()
+setwd(dir)
 
+# Se cargan las librerías necesarias
 library(ggpubr)
 library(boot) # Para bootstrapping
 library(dplyr) # Para manipulación de datos
 library(multcomp) # Para comparaciones post-hoc
+library(ez)
 
-dir <- getwd()
+# Se cargan los datos
+datos <- read.csv2("Desktop/EI-EP-06-07-08/EP08 Datos CASEN 2017.csv", fileEncoding = "Latin1", colClasses = c(r3 = "factor", s28 = "factor"))
 
-setwd(dir)
+##############################################################################
+# ¿Existe una diferencia significativa en la frecuencia 
+# de enfermedades crónicas entre los individuos que 
+# pertenecen a un pueblo originario y aquellos que no, 
+# en la población de Chile?
+##############################################################################
 
-# Se leen los datos
-datos <- read.csv2("Desktop/EP-Grupo-8/EP08 Datos CASEN 2017.csv", fileEncoding = "Latin1")
+# Pregunta a desarrollar:
+cat("1. ¿Es igual la frecuencia de enfermedades crónicas entre los individuos que
+    pertenecen a un pueblo originario y aquellos que no en Chile?\n\n")
 
+# Se verifica que los datos se imprimen bien
 head(datos)
-# Se hace la selección de una muestra aleatoria
+
+# Se ve el nombre de las variables de la tabla
+# names(datos)
+
+datos$r3 <- as.factor(datos$r3)
+datos$s28 <- as.factor(datos$s28)
+
+# Se verifican los niveles de los datos
+levels(datos$r3)
+levels(datos$s28)
+
+# Verificar los valores únicos en las columnas r3 y s28
+# unique(datos$r3)
+# unique(datos$s28)
+
+# Se escogen 125 personas
+datos1 <- sample_n(datos, 125)
+datos1 <- datos1 %>% 
+  dplyr::select(r3, s28) %>%
+  mutate(pueblo_originario = ifelse(r3 == "No pertenece a ningún pueblo indígena" | r3 == "No sabe/no responde", "No", "Si"),
+         enfermedad_cronica = ifelse(s28 == "No ha estado en tratamiento por ninguna condicion de salud a" | s28 == "No sabe/No recuerda", "No", "Si"))
+
+# Análisis exploratorio
+table(datos1$pueblo_originario, datos1$enfermedad_cronica)
+
+# Formulación de hipótesis
+# Ho: No hay diferencia en la frecuencia de enfermedades crónicas entre los grupos
+# Ha: Hay una diferencia en la frecuencia de enfermedades crónicas entre los grupos
+
+# Se calcula la estadística de la prueba observada (chi-cuadrado)
+obs_chi <- chisq.test(table(datos1$pueblo_originario, datos1$enfermedad_cronica))$statistic
+obs_chi
+
+# Simulación de Monte Carlo
 set.seed(123)
-n <- sample(101:149, 1)
-muestra <- datos[sample(nrow(datos), n), ]
+n_simulaciones <- 9999
+simulaciones <- replicate(n_simulaciones, {
+  datos_simulados <- datos1 %>%
+    mutate(pueblo_originario = sample(pueblo_originario, replace = TRUE),
+           enfermedad_cronica = sample(enfermedad_cronica, replace = TRUE))
+  chisq.test(table(datos_simulados$pueblo_originario, datos_simulados$enfermedad_cronica))$statistic
+})
 
-# Se define el número de simulaciones
-num_simulaciones <- 99
-diferencias <- numeric(num_simulaciones)
+# Se calcula el valor de p
+p_valor <- mean(simulaciones >= obs_chi)
 
-for(i in 1:num_simulaciones){
-  muestra_simulada <- muestra[sample(nrow(muestra), n, replace = TRUE), ]
-  frecuencia_originarios <- mean((muestra_simulada$r3 == "No pertenece a ningún pueblo indígena" | muestra_simulada$r3 == "No sabe/no responde") & ((muestra_simulada$s28 != "No ha estado en tratamiento por ninguna condicion de salud a") | (muestra_simulada$s28 == "No sabe/No recuerda")), na.rm = TRUE)
-  frecuencia_no_originarios <- mean((muestra_simulada$r3 != "No pertenece a ningún pueblo indígena" | muestra_simulada$r3 == "No sabe/no responde") & ((muestra_simulada$s28 != "No ha estado en tratamiento por ninguna condicion de salud a") | (muestra_simulada$s28 == "No sabe/No recuerda")), na.rm = TRUE)
-  diferencias[i] <- frecuencia_originarios - frecuencia_no_originarios
-}
+# Resultados
+cat("El valor p del análisis Monte Carlo es: ", p_valor, "\n")
 
-# Análisis de los resultados
-media_diferencias <- mean(diferencias)
-ic_inf <- quantile(diferencias, 0.025, na.rm = TRUE)
-ic_sup <- quantile(diferencias, 0.975, na.rm = TRUE)
-
-cat("La diferencia media estimada es:", media_diferencias, "\n")
-cat("El intervalo de confianza al 95% para la diferencia es: [", ic_inf, ",", ic_sup, "]\n")
-
-# Determinar si la diferencia es estadísticamente significativa
-if(ic_inf > 0 | ic_sup < 0) {
-  cat("La diferencia es estadísticamente significativa.\n")
-} else {
-  cat("La diferencia no es estadísticamente significativa.\n")
-}
-
+cat("Como el valor de p es 0.5963, se falla en rechazar la hipótesis nula en favor de la
+    alternativa, lo que quiere decir que no se puede descartar de que no exista una diferencia
+    en la frecuencia de enfermedades crónicas entre las personas de pueblos originarios y
+    las personas que no pertenecen a pueblos originarios.")
 
 # ¿Difieren significativamente los promedios de de horas de trabajo entre las 
 # personas según su nivel de educación (Sin educación, M. Hum. completa y 
@@ -78,7 +109,7 @@ media_trabajo <- function(data, indices) {
 resultados_bootstrap <- boot(data = muestra2, statistic = media_trabajo, R = 99)
 print(resultados_bootstrap)
 
-Análisis post-hoc con bootstrapping
+#Análisis post-hoc con bootstrapping
 # Utilizaremos la función `glht` de `multcomp` para múltiples comparaciones
 modelo <- lm(o10 ~ educ, data = muestra2)
 comparaciones <- glht(modelo, linfct = mcp(educ = "Tukey"))
