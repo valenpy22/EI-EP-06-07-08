@@ -57,6 +57,7 @@ table(datos1$pueblo_originario, datos1$enfermedad_cronica)
 # Ha: Hay una diferencia en la frecuencia de enfermedades crónicas entre los grupos
 
 # Se calcula la estadística de la prueba observada (chi-cuadrado)
+# Esto es debido a que se tienen 2 variables categóricas y se comparan las proporciones.
 obs_chi <- chisq.test(table(datos1$pueblo_originario, datos1$enfermedad_cronica))$statistic
 obs_chi
 
@@ -84,7 +85,7 @@ cat("Como el valor de p es 0.5963, se falla en rechazar la hipótesis nula en fa
 ##############################################################################
 # PREGUNTA 2                                                                 #
 ##############################################################################
-# ¿Difieren significativamente los promedios de de horas de trabajo entre las 
+# ¿Difieren significativamente los promedios de horas de trabajo entre las 
 # personas según su nivel de educación (Sin educación, M. Hum. completa y 
 # profesional completo)?
 ##############################################################################
@@ -141,12 +142,13 @@ tukey_resultados <- TukeyHSD(aov(o10 ~ educ, data = datos2))
 print(tukey_resultados)
 
 # Conclusión
-# Se tiene que entre las personas que no tienen educación formal y las que tienen
-# enseñanza media completa, tienen una diferencia significativa.
-# Entre las personas que no tienen educación formal y las que tienen profesional completo
-# tienen una diferencia un poco más significativas que la anterior mencionada.
-# Además, entre las personas que tienen la enseñanza media completa y las que tienen
-# profesión, no hay diferencias significativas.
+cat("Se tiene que entre las personas que no tienen educación formal y las que tienen
+    enseñanza media completa, tienen una diferencia significativa.
+    Entre las personas que no tienen educación formal y las que tienen profesional completo
+    tienen una diferencia un poco más significativas que la anterior mencionada.
+    Además, entre las personas que tienen la enseñanza media completa y las que tienen
+    profesión, no hay diferencias significativas.
+    Finalmente se tiene que se rechaza la hipótesis nula en favor de la hipótesis alternativa.
+    Es decir, sí existen diferencias significativas.")
+ 
 
-# Finalmente se tiene que se rechaza la hipótesis nula en favor de la hipótesis alternativa.
-# Es decir, sí existen diferencias significativas.
