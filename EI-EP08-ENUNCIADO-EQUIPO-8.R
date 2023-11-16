@@ -13,6 +13,8 @@ library(ez)
 datos <- read.csv2("Desktop/EI-EP-06-07-08/EP08 Datos CASEN 2017.csv", fileEncoding = "Latin1", colClasses = c(r3 = "factor", s28 = "factor"))
 
 ##############################################################################
+# PREGUNTA 1                                                                 #
+##############################################################################
 # ¿Existe una diferencia significativa en la frecuencia 
 # de enfermedades crónicas entre los individuos que 
 # pertenecen a un pueblo originario y aquellos que no, 
@@ -24,7 +26,7 @@ cat("1. ¿Es igual la frecuencia de enfermedades crónicas entre los individuos 
     pertenecen a un pueblo originario y aquellos que no en Chile?\n\n")
 
 # Se verifica que los datos se imprimen bien
-head(datos)
+# head(datos)
 
 # Se ve el nombre de las variables de la tabla
 # names(datos)
@@ -33,8 +35,8 @@ datos$r3 <- as.factor(datos$r3)
 datos$s28 <- as.factor(datos$s28)
 
 # Se verifican los niveles de los datos
-levels(datos$r3)
-levels(datos$s28)
+# levels(datos$r3)
+# levels(datos$s28)
 
 # Verificar los valores únicos en las columnas r3 y s28
 # unique(datos$r3)
@@ -79,50 +81,72 @@ cat("Como el valor de p es 0.5963, se falla en rechazar la hipótesis nula en fa
     en la frecuencia de enfermedades crónicas entre las personas de pueblos originarios y
     las personas que no pertenecen a pueblos originarios.")
 
+##############################################################################
+# PREGUNTA 2                                                                 #
+##############################################################################
 # ¿Difieren significativamente los promedios de de horas de trabajo entre las 
 # personas según su nivel de educación (Sin educación, M. Hum. completa y 
 # profesional completo)?
+##############################################################################
 
-# Establecer la semilla para la reproducibilidad
-set.seed(100) # Reemplaza una_nueva_semilla con un número entero de tu elección
+# Pregunta a desarrollar:
+cat("2. ¿Son significativamente distintos los promedios de horas de trabajo entre
+    las personas según su nivel de educación (Sin educación formal, M. Hum. Completa
+    y Profesional Completo)?")
 
-# Leer los datos desde el CSV
-datos2 <- read.csv2("Desktop/EP-Grupo-8/EP08 Datos CASEN 2017.csv", fileEncoding = "Latin1")
+datos$educ <- as.factor(datos$educ)
+datos$o10 <- as.numeric(as.character(datos$o10))
 
-# Asegurarse de que 'educ' y 'o10' están en el formato correcto
-datos2$educ <- as.factor(datos2$educ)
-datos2$o10 <- as.numeric(as.character(datos2$o10))
+# Se verifican los niveles de educación
+levels(datos$educ)
 
-# Seleccionar una muestra aleatoria de hogares
-n2 <- sample(201:299, 1) # Un número aleatorio entre 200 y 300
-muestra2 <- sample_n(datos2, n2)
+# Se filtran los datos según los niveles de educación
+set.seed(1)
+datos2 <- sample_n(datos, 250)
 
-# Realizar bootstrapping
-# Definir la estadística de interés
-media_trabajo <- function(data, indices) {
-  d <- data[indices, ] # Permite el muestreo con reemplazo
-  medias <- tapply(d$o10, d$educ, mean, na.rm = TRUE)
-  return(medias)
-}
+datos2 <- datos2 %>%
+  filter(educ %in% c("Sin Educ. Formal", "M. Hum. Completa", "Profesional Completo")) %>%
+  dplyr::select(o10, educ) %>%
+  filter(!is.na(o10))
 
-# Aplicar el método de bootstrapping
-resultados_bootstrap <- boot(data = muestra2, statistic = media_trabajo, R = 99)
-print(resultados_bootstrap)
+datos2
 
-#Análisis post-hoc con bootstrapping
-# Utilizaremos la función `glht` de `multcomp` para múltiples comparaciones
-modelo <- lm(o10 ~ educ, data = muestra2)
-comparaciones <- glht(modelo, linfct = mcp(educ = "Tukey"))
-# summary(comparaciones)
-
-# Podemos también realizar bootstrapping para las comparaciones post-hoc
-comparacion_posthoc <- function(data, indices) {
+# Función para calcular la media de las horas de trabajo
+media_horas <- function(data, indices){
   d <- data[indices, ]
-  modelo <- lm(o10 ~ educ, data = d)
-  comp <- glht(modelo, linfct = mcp(educ = "Tukey"))
-  cld <- summary(comp)$test$coefficients
-  return(cld)
+  return(mean(d$o10))
 }
 
-# Aplicar bootstrapping a las comparaciones post-hoc
-resultados_posthoc_bootstrap <- boot(data = muestra2, statistic = comparacion_posthoc, R = 99)
+# Se aplica boostrapping
+resultados_bootstrap <- lapply(unique(datos2$educ), function(nivel) {
+  data_nivel <- filter(datos2, educ == nivel)
+  boot(data_nivel, media_horas, R = 999)
+})
+
+nombres <- unique(datos2$educ)
+names(resultados_bootstrap) <- nombres
+
+resultados_bootstrap
+
+# Formulación de hipótesis
+# H0: Las medias de las horas de trabajo son iguales para todos
+# los niveles de educación. Es decir, no hay diferencias significativas
+# entre los grupos.
+# HA: Al menos una de las medias de las horas de trabajo es diferente a
+# las otras. Es decir, hay al menos una diferencia significativa
+# entre los grupos.
+
+tukey_resultados <- TukeyHSD(aov(o10 ~ educ, data = datos2))
+
+print(tukey_resultados)
+
+# Conclusión
+# Se tiene que entre las personas que no tienen educación formal y las que tienen
+# enseñanza media completa, tienen una diferencia significativa.
+# Entre las personas que no tienen educación formal y las que tienen profesional completo
+# tienen una diferencia un poco más significativas que la anterior mencionada.
+# Además, entre las personas que tienen la enseñanza media completa y las que tienen
+# profesión, no hay diferencias significativas.
+
+# Finalmente se tiene que se rechaza la hipótesis nula en favor de la hipótesis alternativa.
+# Es decir, sí existen diferencias significativas.
